@@ -1,0 +1,178 @@
+.promotion-list {
+  padding: 20px;
+}
+
+.promotion-list h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.empty-message {
+  text-align: center;
+  color: #999;
+  padding: 40px 20px;
+  font-style: italic;
+}
+
+.promotions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.promotion-card {
+  background: white;
+  border: 2px solid #4CAF50;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s, transform 0.2s;
+}
+
+.promotion-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.promotion-card.inactive {
+  border-color: #ccc;
+  opacity: 0.7;
+  background: #f9f9f9;
+}
+
+.promotion-card.upcoming {
+  border-color: #2196F3;
+}
+
+.promotion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.promotion-header h4 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.product-name {
+  margin: 5px 0 0 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.status-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge.active {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge.inactive {
+  background-color: #f5f5f5;
+  color: #757575;
+}
+
+.badge.expired {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.badge.upcoming {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.promotion-description {
+  color: #555;
+  font-size: 14px;
+  margin: 10px 0;
+  line-height: 1.4;
+}
+
+.promotion-details {
+  margin: 15px 0;
+}
+
+.discount-info {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.discount-text {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.date-range {
+  color: #666;
+  font-size: 13px;
+  text-align: center;
+}
+
+.promotion-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.toggle-button,
+.delete-button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-weight: 500;
+}
+
+.toggle-button.deactivate {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.toggle-button.deactivate:hover {
+  background-color: #ffe0b2;
+}
+
+.toggle-button.activate {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.toggle-button.activate:hover {
+  background-color: #c8e6c9;
+}
+
+.delete-button {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.delete-button:hover {
+  background-color: #ffcdd2;
+}

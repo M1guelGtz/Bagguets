@@ -1,0 +1,93 @@
+.sale-form {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sale-form h2 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.sale-items {
+  margin-bottom: 20px;
+}
+
+.sale-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.sale-item .form-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.btn-remove {
+  background: #ef4444;
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  align-self: flex-end;
+  height: fit-content;
+}
+
+.btn-remove:hover {
+  background: #dc2626;
+}
+
+.btn-add {
+  background: #10b981;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+.btn-add:hover {
+  background: #059669;
+}
+
+.sale-total {
+  background: #f3f4f6;
+  padding: 16px;
+  border-radius: 6px;
+  margin: 20px 0;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: right;
+}
+
+.workers-section {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 6px;
+  margin: 20px 0;
+}
+
+.workers-section h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.worker-selects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}

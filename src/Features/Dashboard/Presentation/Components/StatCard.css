@@ -1,0 +1,42 @@
+.stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat-card h3 {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  font-weight: 500;
+}
+
+.stat-card .value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+.stat-card .change {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.stat-card .change.positive {
+  color: #10b981;
+}
+
+.stat-card .change.negative {
+  color: #ef4444;
+}
+
+.stat-card .change.neutral {
+  color: #6b7280;
+}
