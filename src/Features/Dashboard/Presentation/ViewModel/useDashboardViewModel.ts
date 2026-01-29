@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { LocalStorageCashRegisterHistoryRepository } from '../../Data/Repository/LocalStorageCashRegisterHistoryRepository';
 import { LocalStorageCashRegisterRepository } from '../../Data/Repository/LocalStorageCashRegisterRepository';
 import { LocalStorageExpenseRepository } from '../../Data/Repository/LocalStorageExpenseRepository';
 import { LocalStorageIngredientMovementRepository } from '../../Data/Repository/LocalStorageIngredientMovementRepository';
@@ -12,6 +13,7 @@ import { LocalStorageWorkerParticipationRepository } from '../../Data/Repository
 import { LocalStorageWorkerPaymentRepository } from '../../Data/Repository/LocalStorageWorkerPaymentRepository';
 import { LocalStorageWorkerRepository } from '../../Data/Repository/LocalStorageWorkerRepository';
 import { CashRegister } from '../../Domain/Entities/CashRegister';
+import { CashRegisterHistory } from '../../Domain/Entities/CashRegisterHistory';
 import { Expense } from '../../Domain/Entities/Expense';
 import { Ingredient } from '../../Domain/Entities/Ingredient';
 import { MovementType } from '../../Domain/Entities/InventoryMovement';
@@ -48,6 +50,7 @@ export const useDashboardViewModel = () => {
   const [workerEarnings, setWorkerEarnings] = useState<WorkerEarnings[]>([]);
   const [profitReport, setProfitReport] = useState<ProfitReport | null>(null);
   const [cashRegister, setCashRegister] = useState<CashRegister | null>(null);
+  const [cashRegisterHistory, setCashRegisterHistory] = useState<CashRegisterHistory[]>([]);
   const [todaySales, setTodaySales] = useState<Sale[]>([]);
   const [todayExpenses, setTodayExpenses] = useState<Expense[]>([]);
   const [salesGrowth, setSalesGrowth] = useState<SalesGrowth | null>(null);
@@ -56,6 +59,7 @@ export const useDashboardViewModel = () => {
   // Repositories
   const productRepository = new LocalStorageProductRepository();
   const ingredientRepository = new LocalStorageIngredientRepository();
+  const cashRegisterHistoryRepository = new LocalStorageCashRegisterHistoryRepository();
   const productIngredientRepository = new LocalStorageProductIngredientRepository();
   const ingredientMovementRepository = new LocalStorageIngredientMovementRepository();
   const inventoryRepository = new LocalStorageInventoryRepository();
@@ -142,6 +146,7 @@ export const useDashboardViewModel = () => {
         salesData,
         expensesData,
         growthData,
+        historyData,
       ] = await Promise.all([
         productRepository.getAll(),
         ingredientRepository.getAll(),
@@ -153,6 +158,7 @@ export const useDashboardViewModel = () => {
         saleRepository.getTodaySales(),
         expenseRepository.getTodayExpenses(),
         getSalesGrowthUseCase.execute(),
+        cashRegisterHistoryRepository.getAll(),
       ]);
 
       setProducts(productsData);
@@ -165,6 +171,7 @@ export const useDashboardViewModel = () => {
       setTodaySales(salesData);
       setTodayExpenses(expensesData);
       setSalesGrowth(growthData);
+      setCashRegisterHistory(historyData);
 
       // Calcular disponibilidad de productos basada en insumos
       const availabilities = await checkProductAvailabilityUseCase.execute();
@@ -174,6 +181,7 @@ export const useDashboardViewModel = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setDate(tomorrow.getDate() + 1);
       const profitData = await getProfitReportUseCase.execute(today, tomorrow);
       setProfitReport(profitData);
@@ -199,6 +207,25 @@ export const useDashboardViewModel = () => {
     ingredientData: Omit<Ingredient, 'id' | 'createdAt' | 'updatedAt'>
   ) => {
     await createIngredientUseCase.execute(ingredientData);
+    await loadData();
+  };
+
+  const editIngredient = async (
+    ingredientId: string,
+    ingredientData: Omit<Ingredient, 'id' | 'createdAt' | 'updatedAt'>
+  ) => {
+    const ingredient = await ingredientRepository.getById(ingredientId);
+    if (!ingredient) {
+      throw new Error('Insumo no encontrado');
+    }
+
+    const updatedIngredient: Ingredient = {
+      ...ingredient,
+      ...ingredientData,
+      updatedAt: new Date(),
+    };
+
+    await ingredientRepository.update(ingredientId, updatedIngredient);
     await loadData();
   };
 
@@ -294,7 +321,31 @@ export const useDashboardViewModel = () => {
   };
 
   const closeCashRegister = async (actualBalance: number, notes?: string) => {
+    // Obtener la caja actual antes de cerrar
+    const currentCash = await cashRegisterRepository.getCurrent();
+    
     await closeCashRegisterUseCase.execute(actualBalance, notes);
+    
+    // Guardar en el historial después de cerrar
+    if (currentCash) {
+      const closed = await cashRegisterRepository.getCurrent();
+      if (closed && closed.status === 'CLOSED') {
+        await cashRegisterHistoryRepository.create({
+          openedAt: currentCash.openedAt,
+          closedAt: closed.closedAt || new Date(),
+          openingBalance: currentCash.openingBalance,
+          closingBalance: closed.closingBalance || 0,
+          totalSales: closed.totalSales,
+          totalExpenses: closed.totalExpenses,
+          expectedBalance: closed.expectedBalance,
+          actualBalance: closed.actualBalance || 0,
+          difference: closed.difference || 0,
+          userId: currentCash.userId,
+          notes,
+        });
+      }
+    }
+
     await loadData();
   };
 
@@ -337,6 +388,7 @@ export const useDashboardViewModel = () => {
     workerEarnings,
     profitReport,
     cashRegister,
+    cashRegisterHistory,
     todaySales,
     todayExpenses,
     salesGrowth,
@@ -345,6 +397,7 @@ export const useDashboardViewModel = () => {
     // Actions
     createProduct,
     createIngredient,
+    editIngredient,
     createPromotion,
     togglePromotionActive,
     deletePromotion,

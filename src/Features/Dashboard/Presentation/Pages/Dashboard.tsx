@@ -20,6 +20,7 @@ type TabType =
   | 'products'
   | 'sales'
   | 'cash'
+  | 'cash-history'
   | 'expenses'
   | 'inventory'
   | 'ingredients'
@@ -40,12 +41,14 @@ export const Dashboard: React.FC = () => {
     workerEarnings,
     profitReport,
     cashRegister,
+    cashRegisterHistory,
     todaySales,
     todayExpenses,
     salesGrowth,
     loading,
     createProduct,
     createIngredient,
+    editIngredient,
     createPromotion,
     togglePromotionActive,
     deletePromotion,
@@ -70,6 +73,7 @@ export const Dashboard: React.FC = () => {
   const [showSaleForm, setShowSaleForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [selectedIngredientId, setSelectedIngredientId] = useState<string | null>(null);
 
   if (loading) {
     return <div className="loading">Cargando dashboard...</div>;
@@ -408,6 +412,64 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 
+  const renderCashHistory = () => (
+    <div>
+      <h2>Historial de Cortes de Caja</h2>
+      <div className="product-list">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha Apertura</th>
+              <th>Fecha Cierre</th>
+              <th>Balance Inicial</th>
+              <th>Ventas</th>
+              <th>Gastos</th>
+              <th>Balance Esperado</th>
+              <th>Balance Real</th>
+              <th>Diferencia</th>
+              <th>Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cashRegisterHistory.length === 0 ? (
+              <tr>
+                <td colSpan={9}>
+                  <div className="empty-state">
+                    <h3>Sin cortes registrados</h3>
+                    <p>Los cortes de caja aparecerán aquí</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              cashRegisterHistory.map((history) => (
+                <tr key={history.id}>
+                  <td>{formatDate(history.openedAt)}</td>
+                  <td>{formatDate(history.closedAt)}</td>
+                  <td>{formatCurrency(history.openingBalance)}</td>
+                  <td>{formatCurrency(history.totalSales)}</td>
+                  <td>{formatCurrency(history.totalExpenses)}</td>
+                  <td>{formatCurrency(history.expectedBalance)}</td>
+                  <td>{formatCurrency(history.actualBalance)}</td>
+                  <td>
+                    <span
+                      style={{
+                        color: history.difference === 0 ? '#10b981' : '#ef4444',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {formatCurrency(history.difference)}
+                    </span>
+                  </td>
+                  <td>{history.notes || '-'}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
   const renderExpenses = () => (
     <div>
       {!showExpenseForm ? (
@@ -483,12 +545,13 @@ export const Dashboard: React.FC = () => {
                   <th>Stock Mínimo</th>
                   <th>Costo por Unidad</th>
                   <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {ingredients.length === 0 ? (
                   <tr>
-                    <td colSpan={6}>
+                    <td colSpan={7}>
                       <div className="empty-state">
                         <h3>No hay insumos</h3>
                         <p>Crea tu primer insumo para comenzar</p>
@@ -517,6 +580,17 @@ export const Dashboard: React.FC = () => {
                               : 'Stock Alto'}
                         </span>
                       </td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => {
+                            setSelectedIngredientId(ingredient.id);
+                            setShowIngredientForm(true);
+                          }}
+                        >
+                          Editar
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -525,13 +599,30 @@ export const Dashboard: React.FC = () => {
           </div>
         </>
       ) : (
-        <IngredientForm
-          onSubmit={async (data) => {
-            await createIngredient(data);
+        <div>
+          <button className="btn btn-secondary" onClick={() => {
             setShowIngredientForm(false);
-          }}
-          onCancel={() => setShowIngredientForm(false)}
-        />
+            setSelectedIngredientId(null);
+          }}>
+            ← Volver
+          </button>
+          <IngredientForm
+            initialData={selectedIngredientId ? ingredients.find(i => i.id === selectedIngredientId) : undefined}
+            onSubmit={async (data) => {
+              if (selectedIngredientId) {
+                await editIngredient(selectedIngredientId, data);
+              } else {
+                await createIngredient(data);
+              }
+              setShowIngredientForm(false);
+              setSelectedIngredientId(null);
+            }}
+            onCancel={() => {
+              setShowIngredientForm(false);
+              setSelectedIngredientId(null);
+            }}
+          />
+        </div>
       )}
     </div>
   );
@@ -745,6 +836,12 @@ export const Dashboard: React.FC = () => {
             Caja
           </button>
           <button
+            className={`tab-button ${activeTab === 'cash-history' ? 'active' : ''}`}
+            onClick={() => setActiveTab('cash-history')}
+          >
+            Historial Caja
+          </button>
+          <button
             className={`tab-button ${activeTab === 'products' ? 'active' : ''}`}
             onClick={() => setActiveTab('products')}
           >
@@ -814,6 +911,7 @@ export const Dashboard: React.FC = () => {
           {activeTab === 'inventory' && renderInventory()}
           {activeTab === 'sales' && renderSales()}
           {activeTab === 'cash' && renderCash()}
+          {activeTab === 'cash-history' && renderCashHistory()}
           {activeTab === 'expenses' && renderExpenses()}
           {activeTab === 'promotions' && renderPromotions()}
           {activeTab === 'workers' && renderWorkers()}

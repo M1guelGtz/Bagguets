@@ -11,10 +11,18 @@ interface IngredientFormProps {
     cost: number;
   }) => Promise<void>;
   onCancel?: () => void;
+  initialData?: {
+    name: string;
+    description: string;
+    unit: string;
+    stock: number;
+    minStock: number;
+    cost: number;
+  };
 }
 
-export const IngredientForm: React.FC<IngredientFormProps> = ({ onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState({
+export const IngredientForm: React.FC<IngredientFormProps> = ({ onSubmit, onCancel, initialData }) => {
+  const [formData, setFormData] = useState(initialData || {
     name: '',
     description: '',
     unit: 'kg',
@@ -25,6 +33,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({ onSubmit, onCanc
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const isEditing = !!initialData;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +61,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({ onSubmit, onCanc
 
   return (
     <form className="ingredient-form" onSubmit={handleSubmit}>
-      <h2>Nuevo Insumo</h2>
+      <h2>{isEditing ? 'Editar Insumo' : 'Nuevo Insumo'}</h2>
 
       <div className="form-group">
         <label>Nombre *</label>
