@@ -1,23 +1,29 @@
 import React, { useState } from 'react';
 import { Expense } from '../../Domain/Entities/Expense';
+import { Ingredient } from '../../Domain/Entities/Ingredient';
 import './ExpenseForm.css';
 
 interface ExpenseFormProps {
+  ingredients: Ingredient[];
   onSubmit: (data: {
     description: string;
     amount: number;
     category: Expense['category'];
     notes?: string;
+    ingredientId?: string;
+    quantity?: number;
   }) => Promise<void>;
   onCancel?: () => void;
 }
 
-export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit, onCancel }) => {
+export const ExpenseForm: React.FC<ExpenseFormProps> = ({ ingredients, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     description: '',
     amount: 0,
     category: 'OTHER' as Expense['category'],
     notes: '',
+    ingredientId: '',
+    quantity: 0,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,14 +35,20 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit, onCancel }) 
 
     try {
       await onSubmit({
-        ...formData,
+        description: formData.description,
+        amount: formData.amount,
+        category: formData.category,
         notes: formData.notes || undefined,
+        ingredientId: formData.ingredientId || undefined,
+        quantity: formData.ingredientId && formData.quantity > 0 ? formData.quantity : undefined,
       });
       setFormData({
         description: '',
         amount: 0,
         category: 'OTHER',
         notes: '',
+        ingredientId: '',
+        quantity: 0,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrar gasto');
@@ -95,6 +107,40 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit, onCancel }) 
           rows={3}
         />
       </div>
+
+      <div className="form-group">
+        <label>Vincular a Insumo (opcional)</label>
+        <select
+          value={formData.ingredientId}
+          onChange={(e) => setFormData({ ...formData, ingredientId: e.target.value })}
+        >
+          <option value="">Sin vincular - Solo gasto</option>
+          {ingredients.map((ingredient) => (
+            <option key={ingredient.id} value={ingredient.id}>
+              {ingredient.name} ({ingredient.unit})
+            </option>
+          ))}
+        </select>
+        <small style={{ color: '#6b7280', marginTop: '4px', display: 'block' }}>
+          Selecciona un insumo si este gasto es para comprar inventario
+        </small>
+      </div>
+
+      {formData.ingredientId && (
+        <div className="form-group">
+          <label>Cantidad a Agregar al Stock *</label>
+          <input
+            type="number"
+            step="0.01"
+            value={formData.quantity}
+            onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) })}
+            required={!!formData.ingredientId}
+          />
+          <small style={{ color: '#6b7280', marginTop: '4px', display: 'block' }}>
+            Se agregará esta cantidad al stock del insumo seleccionado
+          </small>
+        </div>
+      )}
 
       {error && <div className="error-message">{error}</div>}
 

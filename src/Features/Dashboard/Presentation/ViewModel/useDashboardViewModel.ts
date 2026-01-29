@@ -101,7 +101,12 @@ export const useDashboardViewModel = () => {
   );
   const openCashRegisterUseCase = new OpenCashRegisterUseCase(cashRegisterRepository);
   const closeCashRegisterUseCase = new CloseCashRegisterUseCase(cashRegisterRepository);
-  const createExpenseUseCase = new CreateExpenseUseCase(expenseRepository, cashRegisterRepository);
+  const createExpenseUseCase = new CreateExpenseUseCase(
+    expenseRepository,
+    cashRegisterRepository,
+    ingredientRepository,
+    ingredientMovementRepository
+  );
   const getSalesGrowthUseCase = new GetSalesGrowthUseCase(saleRepository);
   const createWorkerUseCase = new CreateWorkerUseCase(workerRepository);
   const getWorkerEarningsUseCase = new GetWorkerEarningsUseCase(
@@ -297,9 +302,19 @@ export const useDashboardViewModel = () => {
     description: string,
     amount: number,
     category: Expense['category'],
-    notes?: string
+    notes?: string,
+    ingredientId?: string,
+    quantity?: number
   ) => {
-    await createExpenseUseCase.execute(description, amount, category, 'current-user', notes);
+    await createExpenseUseCase.execute(
+      description,
+      amount,
+      category,
+      'current-user',
+      notes,
+      ingredientId,
+      quantity
+    );
     await loadData();
   };
 

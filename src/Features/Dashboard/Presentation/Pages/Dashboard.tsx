@@ -446,8 +446,16 @@ export const Dashboard: React.FC = () => {
         </>
       ) : (
         <ExpenseForm
+          ingredients={ingredients}
           onSubmit={async (data) => {
-            await createExpense(data.description, data.amount, data.category, data.notes);
+            await createExpense(
+              data.description,
+              data.amount,
+              data.category,
+              data.notes,
+              data.ingredientId,
+              data.quantity
+            );
             setShowExpenseForm(false);
           }}
           onCancel={() => setShowExpenseForm(false)}
