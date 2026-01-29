@@ -110,32 +110,36 @@ export const Dashboard: React.FC = () => {
   const formatDate = (date: Date) => new Date(date).toLocaleString('es-MX');
 
   const renderOverview = () => (
-    <div>
-      <div className="stats-grid">
-        <StatCard
-          title="Ventas del Día"
-          value={formatCurrency(totalSales)}
-          change={salesGrowth?.growthPercentage.daily}
-          changeLabel="vs ayer"
-        />
-        <StatCard
-          title="Gastos del Día"
-          value={formatCurrency(totalExpenses)}
-        />
-        <StatCard
-          title="Balance Neto"
-          value={formatCurrency(netBalance)}
-          change={salesGrowth?.growthPercentage.daily}
-        />
-        <StatCard
-          title="En Caja"
-          value={cashRegister ? formatCurrency(cashRegister.expectedBalance) : '$0.00'}
-        />
+    <div className="overview-container">
+      {/* KPI Cards Principales */}
+      <div className="kpi-section">
+        <div className="stats-grid">
+          <StatCard
+            title="Ventas del Día"
+            value={formatCurrency(totalSales)}
+            change={salesGrowth?.growthPercentage.daily}
+            changeLabel="vs ayer"
+          />
+          <StatCard
+            title="Gastos del Día"
+            value={formatCurrency(totalExpenses)}
+          />
+          <StatCard
+            title="Balance Neto"
+            value={formatCurrency(netBalance)}
+            change={salesGrowth?.growthPercentage.daily}
+          />
+          <StatCard
+            title="En Caja"
+            value={cashRegister ? formatCurrency(cashRegister.expectedBalance) : '$0.00'}
+          />
+        </div>
       </div>
 
-      <div style={{ marginTop: '32px' }}>
-        <h2>Crecimiento de Ventas</h2>
-        {salesGrowth && (
+      {/* Sección de Crecimiento */}
+      {salesGrowth && (
+        <div className="growth-section">
+          <h2>Crecimiento de Ventas</h2>
           <div className="stats-grid">
             <StatCard
               title="Hoy vs Ayer"
@@ -153,53 +157,63 @@ export const Dashboard: React.FC = () => {
               change={salesGrowth.growthPercentage.monthly}
             />
           </div>
-        )}
-      </div>
-
-      <div style={{ marginTop: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-        <div className="product-list">
-          <h3 style={{ padding: '16px', margin: 0 }}>Ventas de Hoy</h3>
-          <div className="sales-list">
-            {todaySales.length === 0 ? (
-              <div className="empty-state">
-                <p>No hay ventas registradas hoy</p>
-              </div>
-            ) : (
-              todaySales.map((sale) => (
-                <div key={sale.id} className="list-item">
-                  <div className="list-item-content">
-                    <div className="list-item-title">
-                      {sale.items.length} producto(s) - {sale.paymentMethod}
-                    </div>
-                    <div className="list-item-subtitle">{formatDate(sale.date)}</div>
-                  </div>
-                  <div className="list-item-amount">{formatCurrency(sale.total)}</div>
-                </div>
-              ))
-            )}
-          </div>
         </div>
+      )}
 
-        <div className="product-list">
-          <h3 style={{ padding: '16px', margin: 0 }}>Gastos de Hoy</h3>
-          <div className="expenses-list">
-            {todayExpenses.length === 0 ? (
-              <div className="empty-state">
-                <p>No hay gastos registrados hoy</p>
-              </div>
-            ) : (
-              todayExpenses.map((expense) => (
-                <div key={expense.id} className="list-item">
-                  <div className="list-item-content">
-                    <div className="list-item-title">{expense.description}</div>
-                    <div className="list-item-subtitle">
-                      {expense.category} - {formatDate(expense.date)}
-                    </div>
-                  </div>
-                  <div className="list-item-amount">{formatCurrency(expense.amount)}</div>
+      {/* Sección de Actividad */}
+      <div className="activity-section">
+        <h2>Actividad de Hoy</h2>
+        <div className="activity-grid">
+          <div className="activity-card">
+            <div className="activity-card-header">
+              <h3>Ventas Realizadas</h3>
+              <span className="badge">{todaySales.length}</span>
+            </div>
+            <div className="sales-list">
+              {todaySales.length === 0 ? (
+                <div className="empty-state">
+                  <p>No hay ventas registradas hoy</p>
                 </div>
-              ))
-            )}
+              ) : (
+                todaySales.map((sale) => (
+                  <div key={sale.id} className="list-item">
+                    <div className="list-item-content">
+                      <div className="list-item-title">
+                        {sale.items.length} producto(s) - {sale.paymentMethod}
+                      </div>
+                      <div className="list-item-subtitle">{formatDate(sale.date)}</div>
+                    </div>
+                    <div className="list-item-amount">{formatCurrency(sale.total)}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="activity-card">
+            <div className="activity-card-header">
+              <h3>Gastos Registrados</h3>
+              <span className="badge">{todayExpenses.length}</span>
+            </div>
+            <div className="expenses-list">
+              {todayExpenses.length === 0 ? (
+                <div className="empty-state">
+                  <p>No hay gastos registrados hoy</p>
+                </div>
+              ) : (
+                todayExpenses.map((expense) => (
+                  <div key={expense.id} className="list-item">
+                    <div className="list-item-content">
+                      <div className="list-item-title">{expense.description}</div>
+                      <div className="list-item-subtitle">
+                        {expense.category} - {formatDate(expense.date)}
+                      </div>
+                    </div>
+                    <div className="list-item-amount">{formatCurrency(expense.amount)}</div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -207,12 +221,12 @@ export const Dashboard: React.FC = () => {
   );
 
   const renderProducts = () => (
-    <div>
+    <div className="section-container">
       {!showProductForm ? (
         <>
           <div style={{ marginBottom: '20px' }}>
             <button className="btn btn-primary" onClick={() => setShowProductForm(true)}>
-              + Nuevo Producto
+              Nuevo Producto
             </button>
           </div>
           <div className="product-list">
@@ -271,7 +285,7 @@ export const Dashboard: React.FC = () => {
   );
 
   const renderInventory = () => (
-    <div>
+    <div className="section-container">
       <h2>Gestión de Inventario</h2>
       <div className="product-list">
         <table>
@@ -350,12 +364,12 @@ export const Dashboard: React.FC = () => {
   );
 
   const renderSales = () => (
-    <div>
+    <div className="section-container">
       {!showSaleForm ? (
         <>
           <div style={{ marginBottom: '20px' }}>
             <button className="btn btn-primary" onClick={() => setShowSaleForm(true)}>
-              + Nueva Venta
+              Nueva Venta
             </button>
           </div>
           <div className="product-list">
@@ -403,7 +417,7 @@ export const Dashboard: React.FC = () => {
   );
 
   const renderCash = () => (
-    <div>
+    <div className="section-container">
       <CashRegister
         cashRegister={cashRegister}
         onOpen={openCashRegister}
@@ -413,7 +427,7 @@ export const Dashboard: React.FC = () => {
   );
 
   const renderCashHistory = () => (
-    <div>
+    <div className="section-container">
       <h2>Historial de Cortes de Caja</h2>
       <div className="product-list">
         <table>
@@ -471,12 +485,12 @@ export const Dashboard: React.FC = () => {
   );
 
   const renderExpenses = () => (
-    <div>
+    <div className="section-container">
       {!showExpenseForm ? (
         <>
           <div style={{ marginBottom: '20px' }}>
             <button className="btn btn-primary" onClick={() => setShowExpenseForm(true)}>
-              + Nuevo Gasto
+              Nuevo Gasto
             </button>
           </div>
           <div className="product-list">
@@ -527,12 +541,12 @@ export const Dashboard: React.FC = () => {
   );
 
   const renderIngredients = () => (
-    <div>
+    <div className="section-container">
       {!showIngredientForm ? (
         <>
           <div style={{ marginBottom: '20px' }}>
             <button className="btn btn-primary" onClick={() => setShowIngredientForm(true)}>
-              + Nuevo Insumo
+              Nuevo Insumo
             </button>
           </div>
           <div className="product-list">
@@ -630,7 +644,7 @@ export const Dashboard: React.FC = () => {
   const renderProductIngredients = () => {
     if (selectedProductId === null) {
       return (
-        <div style={{ padding: '24px' }}>
+        <div className="section-container">
           <h2>Selecciona un Producto</h2>
           <div className="product-list">
             <table>
@@ -717,12 +731,12 @@ export const Dashboard: React.FC = () => {
   };
 
   const renderWorkers = () => (
-    <div>
+    <div className="section-container">
       {!showWorkerForm ? (
         <>
           <div style={{ marginBottom: '20px' }}>
             <button className="btn btn-primary" onClick={() => setShowWorkerForm(true)}>
-              + Nuevo Trabajador
+              Nuevo Trabajador
             </button>
           </div>
           <WorkerList
@@ -749,7 +763,7 @@ export const Dashboard: React.FC = () => {
   );
 
   const renderEarnings = () => (
-    <div>
+    <div className="section-container">
       <WorkerEarningsReport
         earnings={workerEarnings}
         onPayWorker={async (workerId, amount) => {
@@ -766,7 +780,7 @@ export const Dashboard: React.FC = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     return (
-      <div>
+      <div className="section-container">
         {profitReport && (
           <ProfitReportView
             report={profitReport}
@@ -778,12 +792,12 @@ export const Dashboard: React.FC = () => {
   };
 
   const renderPromotions = () => (
-    <div>
+    <div className="section-container">
       {!showPromotionForm ? (
         <>
           <div style={{ marginBottom: '20px' }}>
             <button className="btn btn-primary" onClick={() => setShowPromotionForm(true)}>
-              + Nueva Promoción
+              Nueva Promoción
             </button>
           </div>
           <PromotionList

@@ -1,8 +1,8 @@
 import { Expense } from '../Entities/Expense';
 import { ICashRegisterRepository } from '../Repository/ICashRegisterRepository';
 import { IExpenseRepository } from '../Repository/IExpenseRepository';
-import { IIngredientRepository } from '../Repository/IIngredientRepository';
 import { IIngredientMovementRepository } from '../Repository/IIngredientMovementRepository';
+import { IIngredientRepository } from '../Repository/IIngredientRepository';
 
 export class CreateExpenseUseCase {
   constructor(

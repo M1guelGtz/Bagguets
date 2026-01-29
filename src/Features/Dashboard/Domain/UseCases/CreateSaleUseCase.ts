@@ -112,9 +112,13 @@ export class CreateSaleUseCase {
 
     // Asignar trabajadores a la venta y calcular sus pagos
     if (cookId || deliveryId) {
+      // Calcular el total de productos vendidos
+      const productCount = saleItems.reduce((sum, item) => sum + item.quantity, 0);
+      
       await this.assignWorkersToSaleUseCase.execute(sale.id, {
         cookId,
         deliveryId,
+        productCount,
       });
     }
 

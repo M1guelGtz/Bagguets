@@ -36,7 +36,8 @@
 .tab-buttons {
   display: flex;
   border-bottom: 1px solid #e5e7eb;
-  overflow-x: auto;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .tab-button {
@@ -193,4 +194,238 @@
 .btn-small {
   padding: 6px 12px;
   font-size: 12px;
+}
+
+/* Overview Section Improvements */
+.overview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.kpi-section {
+  animation: slideInDown 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.growth-section {
+  animation: slideInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s backwards;
+}
+
+.growth-section h2 {
+  font-size: 20px;
+  color: #333;
+  margin-bottom: 20px;
+  margin-top: 0;
+  transition: color 0.3s ease;
+}
+
+.activity-section {
+  animation: slideInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
+}
+
+.activity-section h2 {
+  font-size: 20px;
+  color: #333;
+  margin-bottom: 20px;
+  margin-top: 0;
+  transition: color 0.3s ease;
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.activity-card {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInScale 0.6s ease-out forwards;
+}
+
+.activity-card:nth-child(1) {
+  animation-delay: 0.3s;
+}
+
+.activity-card:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.activity-card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+}
+
+.activity-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 2px solid #e5e7eb;
+  background: linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%);
+  transition: all 0.3s ease;
+}
+
+.activity-card:hover .activity-card-header {
+  border-bottom-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+}
+
+.activity-card-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.activity-card:hover .activity-card-header h3 {
+  color: #3b82f6;
+}
+
+.badge {
+  display: inline-block;
+  background: #3b82f6;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.activity-card:hover .badge {
+  background: #2563eb;
+  transform: scale(1.1);
+}
+
+.sales-list,
+.expenses-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.sales-list::-webkit-scrollbar,
+.expenses-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sales-list::-webkit-scrollbar-track,
+.expenses-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.sales-list::-webkit-scrollbar-thumb,
+.expenses-list::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.sales-list::-webkit-scrollbar-thumb:hover,
+.expenses-list::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.list-item {
+  animation: fadeInLeft 0.4s ease-out forwards;
+  transition: all 0.3s ease;
+}
+
+.list-item:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.list-item:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.list-item:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.list-item:hover {
+  background: #f9fafb;
+  padding-left: 20px;
+}
+
+@media (max-width: 768px) {
+  .activity-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* General Section Container Animations */
+.section-container {
+  animation: fadeInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -5,6 +5,7 @@ import { IWorkerRepository } from '../../Domain/Repository/IWorkerRepository';
 interface WorkerAssignment {
   cookId?: string;
   deliveryId?: string;
+  productCount?: number; // Número de productos vendidos en la venta
 }
 
 export class AssignWorkersToSaleUseCase {
@@ -18,6 +19,7 @@ export class AssignWorkersToSaleUseCase {
     workers: WorkerAssignment
   ): Promise<WorkerParticipation[]> {
     const participations: WorkerParticipation[] = [];
+    const productCount = workers.productCount || 1;
 
     // Asignar cocinero
     if (workers.cookId) {
@@ -25,13 +27,16 @@ export class AssignWorkersToSaleUseCase {
       if (!cook) throw new Error('Cocinero no encontrado');
       if (!cook.active) throw new Error('El cocinero no está activo');
 
+      // Calcular pago basado en número de productos
+      const cookPayment = cook.paymentPerSale * productCount;
+
       const cookParticipation: WorkerParticipation = {
         id: crypto.randomUUID(),
         saleId,
         workerId: cook.id,
         workerName: cook.name,
         role: 'COCINERO',
-        payment: cook.paymentPerSale,
+        payment: cookPayment,
         paid: false,
         date: new Date()
       };
@@ -46,13 +51,16 @@ export class AssignWorkersToSaleUseCase {
       if (!delivery) throw new Error('Repartidor no encontrado');
       if (!delivery.active) throw new Error('El repartidor no está activo');
 
+      // Calcular pago basado en número de productos
+      const deliveryPayment = delivery.paymentPerSale * productCount;
+
       const deliveryParticipation: WorkerParticipation = {
         id: crypto.randomUUID(),
         saleId,
         workerId: delivery.id,
         workerName: delivery.name,
         role: 'REPARTIDOR',
-        payment: delivery.paymentPerSale,
+        payment: deliveryPayment,
         paid: false,
         date: new Date()
       };
