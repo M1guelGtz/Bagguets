@@ -7,8 +7,6 @@ interface ProductFormProps {
     description: string;
     price: number;
     cost: number;
-    stock: number;
-    minStock: number;
     category: string;
   }) => Promise<void>;
   onCancel?: () => void;
@@ -20,8 +18,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onSubmit, onCancel }) 
     description: '',
     price: 0,
     cost: 0,
-    stock: 0,
-    minStock: 0,
     category: '',
   });
   const [error, setError] = useState('');
@@ -39,8 +35,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onSubmit, onCancel }) 
         description: '',
         price: 0,
         cost: 0,
-        stock: 0,
-        minStock: 0,
         category: '',
       });
     } catch (err) {
@@ -92,28 +86,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onSubmit, onCancel }) 
             step="0.01"
             value={formData.cost}
             onChange={(e) => setFormData({ ...formData, cost: parseFloat(e.target.value) })}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="form-row">
-        <div className="form-group">
-          <label>Stock Inicial *</label>
-          <input
-            type="number"
-            value={formData.stock}
-            onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Stock Mínimo *</label>
-          <input
-            type="number"
-            value={formData.minStock}
-            onChange={(e) => setFormData({ ...formData, minStock: parseInt(e.target.value) })}
             required
           />
         </div>
