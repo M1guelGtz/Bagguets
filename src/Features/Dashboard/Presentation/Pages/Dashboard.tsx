@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CashRegister } from '../Components/CashRegister';
 import { ExpenseForm } from '../Components/ExpenseForm';
 import { IngredientForm } from '../Components/IngredientForm';
+import { ManualWorkerPaymentForm } from '../Components/ManualWorkerPaymentForm';
 import { ProductForm } from '../Components/ProductForm';
 import { ProductIngredients } from '../Components/ProductIngredients';
 import { ProfitReportView } from '../Components/ProfitReportView';
@@ -59,6 +60,7 @@ export const Dashboard: React.FC = () => {
     createWorker,
     toggleWorkerActive,
     payWorker,
+    createManualWorkerPayment,
     openCashRegister,
     closeCashRegister,
     createExpense,
@@ -72,6 +74,7 @@ export const Dashboard: React.FC = () => {
   const [showWorkerForm, setShowWorkerForm] = useState(false);
   const [showSaleForm, setShowSaleForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [showManualPaymentForm, setShowManualPaymentForm] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedIngredientId, setSelectedIngredientId] = useState<string | null>(null);
 
@@ -426,8 +429,125 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 
+  const handlePrintCashHistory = () => {
+    const printWindow = window.open('', '', 'height=600,width=900');
+    if (!printWindow) return;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Historial de Cortes de Caja</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+          }
+          h1 {
+            text-align: center;
+            margin-bottom: 10px;
+          }
+          .header-info {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #666;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+          }
+          th, td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: left;
+            font-size: 11px;
+          }
+          th {
+            background-color: #f3f4f6;
+            font-weight: bold;
+          }
+          tr:nth-child(even) {
+            background-color: #f9fafb;
+          }
+          .positive {
+            color: #10b981;
+            font-weight: bold;
+          }
+          .negative {
+            color: #ef4444;
+            font-weight: bold;
+          }
+          .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+          }
+          @media print {
+            body { margin: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Historial de Cortes de Caja</h1>
+        <div class="header-info">
+          <p>Impresión: ${new Date().toLocaleString('es-ES')}</p>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha Apertura</th>
+              <th>Fecha Cierre</th>
+              <th>Balance Inicial</th>
+              <th>Ventas</th>
+              <th>Gastos</th>
+              <th>Balance Esperado</th>
+              <th>Balance Real</th>
+              <th>Diferencia</th>
+              <th>Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${cashRegisterHistory.map(history => `
+              <tr>
+                <td>${formatDate(history.openedAt)}</td>
+                <td>${formatDate(history.closedAt)}</td>
+                <td>${formatCurrency(history.openingBalance)}</td>
+                <td>${formatCurrency(history.totalSales)}</td>
+                <td>${formatCurrency(history.totalExpenses)}</td>
+                <td>${formatCurrency(history.expectedBalance)}</td>
+                <td>${formatCurrency(history.actualBalance)}</td>
+                <td class="${history.difference === 0 ? 'positive' : 'negative'}">
+                  ${formatCurrency(history.difference)}
+                </td>
+                <td>${history.notes || '-'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="footer">
+          <p>Total de registros: ${cashRegisterHistory.length}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   const renderCashHistory = () => (
     <div className="section-container">
+      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+        <button className="btn btn-primary" onClick={handlePrintCashHistory}>
+          🖨️ Imprimir Historial
+        </button>
+      </div>
       <h2>Historial de Cortes de Caja</h2>
       <div className="product-list">
         <table>
@@ -764,12 +884,44 @@ export const Dashboard: React.FC = () => {
 
   const renderEarnings = () => (
     <div className="section-container">
-      <WorkerEarningsReport
-        earnings={workerEarnings}
-        onPayWorker={async (workerId, amount) => {
-          await payWorker(workerId, amount);
-        }}
-      />
+      {!showManualPaymentForm ? (
+        <>
+          <div style={{ marginBottom: '20px' }}>
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowManualPaymentForm(true)}
+            >
+              + Agregar Pago Manual
+            </button>
+          </div>
+          <WorkerEarningsReport
+            earnings={workerEarnings}
+            onPayWorker={async (workerId, amount) => {
+              await payWorker(workerId, amount);
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <div style={{ marginBottom: '20px' }}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowManualPaymentForm(false)}
+            >
+              ← Volver
+            </button>
+          </div>
+          <ManualWorkerPaymentForm
+            workers={workers}
+            onSubmit={async (payment) => {
+              await createManualWorkerPayment(payment);
+              setShowManualPaymentForm(false);
+            }}
+            onCancel={() => setShowManualPaymentForm(false)}
+            userId="current-user"
+          />
+        </>
+      )}
     </div>
   );
 

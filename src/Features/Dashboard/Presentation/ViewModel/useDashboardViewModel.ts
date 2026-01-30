@@ -29,6 +29,7 @@ import { CloseCashRegisterUseCase } from '../../Domain/UseCases/CloseCashRegiste
 import { ConsumeIngredientsUseCase } from '../../Domain/UseCases/ConsumeIngredientsUseCase';
 import { CreateExpenseUseCase } from '../../Domain/UseCases/CreateExpenseUseCase';
 import { CreateIngredientUseCase } from '../../Domain/UseCases/CreateIngredientUseCase';
+import { CreateManualWorkerPaymentUseCase } from '../../Domain/UseCases/CreateManualWorkerPaymentUseCase';
 import { CreateProductUseCase } from '../../Domain/UseCases/CreateProductUseCase';
 import { CreatePromotionUseCase } from '../../Domain/UseCases/CreatePromotionUseCase';
 import { CreateSaleUseCase } from '../../Domain/UseCases/CreateSaleUseCase';
@@ -120,6 +121,12 @@ export const useDashboardViewModel = () => {
   const payWorkerUseCase = new PayWorkerUseCase(
     workerParticipationRepository,
     workerPaymentRepository
+  );
+  const createManualWorkerPaymentUseCase = new CreateManualWorkerPaymentUseCase(
+    workerPaymentRepository,
+    workerRepository,
+    expenseRepository,
+    cashRegisterRepository
   );
   const getProfitReportUseCase = new GetProfitReportUseCase(
     saleRepository,
@@ -311,6 +318,19 @@ export const useDashboardViewModel = () => {
     await loadData();
   };
 
+  const createManualWorkerPayment = async (data: {
+    workerId: string;
+    amount: number;
+    reason: string;
+    notes?: string;
+  }) => {
+    await createManualWorkerPaymentUseCase.execute({
+      ...data,
+      userId: 'current-user'
+    });
+    await loadData();
+  };
+
   const getProfitReportForPeriod = async (startDate: Date, endDate: Date) => {
     return await getProfitReportUseCase.execute(startDate, endDate);
   };
@@ -324,27 +344,26 @@ export const useDashboardViewModel = () => {
     // Obtener la caja actual antes de cerrar
     const currentCash = await cashRegisterRepository.getCurrent();
     
-    await closeCashRegisterUseCase.execute(actualBalance, notes);
-    
-    // Guardar en el historial después de cerrar
-    if (currentCash) {
-      const closed = await cashRegisterRepository.getCurrent();
-      if (closed && closed.status === 'CLOSED') {
-        await cashRegisterHistoryRepository.create({
-          openedAt: currentCash.openedAt,
-          closedAt: closed.closedAt || new Date(),
-          openingBalance: currentCash.openingBalance,
-          closingBalance: closed.closingBalance || 0,
-          totalSales: closed.totalSales,
-          totalExpenses: closed.totalExpenses,
-          expectedBalance: closed.expectedBalance,
-          actualBalance: closed.actualBalance || 0,
-          difference: closed.difference || 0,
-          userId: currentCash.userId,
-          notes,
-        });
-      }
+    if (!currentCash) {
+      throw new Error('No hay una caja abierta para cerrar');
     }
+
+    const closedRegister = await closeCashRegisterUseCase.execute(actualBalance, notes);
+
+    // Guardar en el historial después de cerrar
+    await cashRegisterHistoryRepository.create({
+      openedAt: currentCash.openedAt,
+      closedAt: closedRegister.closedAt || new Date(),
+      openingBalance: currentCash.openingBalance,
+      closingBalance: closedRegister.closingBalance || 0,
+      totalSales: closedRegister.totalSales,
+      totalExpenses: closedRegister.totalExpenses,
+      expectedBalance: closedRegister.expectedBalance,
+      actualBalance: closedRegister.actualBalance || 0,
+      difference: closedRegister.difference || 0,
+      userId: currentCash.userId,
+      notes,
+    });
 
     await loadData();
   };
@@ -408,6 +427,7 @@ export const useDashboardViewModel = () => {
     createWorker,
     toggleWorkerActive,
     payWorker,
+    createManualWorkerPayment,
     getProfitReportForPeriod,
     openCashRegister,
     closeCashRegister,

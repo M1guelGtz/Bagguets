@@ -7,4 +7,7 @@ export interface WorkerPayment {
   date: Date;
   notes?: string;
   userId: string;
+  paymentType: 'PARTICIPATION' | 'MANUAL'; // Tipo de pago: por participación o manual
+  reason?: string; // Razón del pago manual (tarea extra, adelanto, etc)
 }
+

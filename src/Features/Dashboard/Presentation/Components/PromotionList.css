@@ -66,6 +66,49 @@
   font-size: 14px;
 }
 
+.secondary-product-name {
+  margin: 3px 0 0 0;
+  color: #888;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.products-list-promo {
+  margin-top: 8px;
+}
+
+.product-item {
+  margin: 3px 0;
+  color: #666;
+  font-size: 14px;
+  padding-left: 10px;
+  border-left: 3px solid #4CAF50;
+}
+
+.price-comparison-small {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.price-comparison-small .regular-price {
+  color: #999;
+  text-decoration: line-through;
+}
+
+.price-comparison-small .arrow {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.price-comparison-small .promo-price {
+  color: #4CAF50;
+  font-weight: bold;
+  font-size: 15px;
+}
+
 .status-badges {
   display: flex;
   flex-direction: column;

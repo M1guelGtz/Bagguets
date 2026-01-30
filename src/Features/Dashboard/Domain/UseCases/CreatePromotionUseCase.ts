@@ -1,4 +1,4 @@
-import { Promotion } from '../Entities/Promotion';
+import { Promotion, PromotionProduct } from '../Entities/Promotion';
 import { IProductRepository } from '../Repository/IProductRepository';
 import { IPromotionRepository } from '../Repository/IPromotionRepository';
 
@@ -14,20 +14,47 @@ export class CreatePromotionUseCase {
       throw new Error('El nombre de la promoción es requerido');
     }
 
-    if (!data.productId) {
-      throw new Error('Debe seleccionar un producto');
+    if (!data.products || data.products.length === 0) {
+      throw new Error('Debe agregar al menos un producto a la promoción');
     }
 
-    const product = await this.productRepository.getById(data.productId);
-    if (!product) {
-      throw new Error('Producto no encontrado');
+    // Validar que todos los productos existan
+    const validatedProducts: PromotionProduct[] = [];
+    let totalRegularPrice = 0;
+    
+    for (const productData of data.products) {
+      const product = await this.productRepository.getById(productData.productId);
+      if (!product) {
+        throw new Error(`Producto con ID ${productData.productId} no encontrado`);
+      }
+      
+      if (productData.quantity <= 0) {
+        throw new Error(`La cantidad del producto ${product.name} debe ser mayor a 0`);
+      }
+      
+      validatedProducts.push({
+        productId: product.id,
+        productName: product.name,
+        quantity: productData.quantity,
+        unitPrice: product.price
+      });
+      
+      totalRegularPrice += product.price * productData.quantity;
     }
 
     if (data.startDate >= data.endDate) {
       throw new Error('La fecha de inicio debe ser anterior a la fecha de fin');
     }
 
-    if (data.discountType === 'BUY_X_GET_Y') {
+    // Validaciones según tipo de descuento
+    if (data.discountType === 'PACKAGE_PRICE') {
+      if (!data.packagePrice || data.packagePrice <= 0) {
+        throw new Error('El precio del paquete debe ser mayor a 0');
+      }
+      if (data.packagePrice >= totalRegularPrice) {
+        throw new Error(`El precio del paquete ($${data.packagePrice}) debe ser menor al precio regular ($${totalRegularPrice})`);
+      }
+    } else if (data.discountType === 'BUY_X_GET_Y') {
       if (!data.buyQuantity || data.buyQuantity <= 0) {
         throw new Error('Cantidad de compra requerida para promoción 2x1');
       }
@@ -40,10 +67,18 @@ export class CreatePromotionUseCase {
       }
     }
 
+    // Mantener compatibilidad con campos antiguos
+    const firstProduct = validatedProducts[0];
+    const secondProduct = validatedProducts.length > 1 ? validatedProducts[1] : undefined;
+
     const promotion: Promotion = {
       ...data,
       id: crypto.randomUUID(),
-      productName: product.name,
+      productId: firstProduct.productId,
+      productName: firstProduct.productName,
+      secondaryProductId: secondProduct?.productId,
+      secondaryProductName: secondProduct?.productName,
+      products: validatedProducts,
       createdAt: new Date(),
       updatedAt: new Date()
     };

@@ -42,61 +42,190 @@ export class CreateSaleUseCase {
     const saleItems: SaleItem[] = [];
     let total = 0;
 
-    for (const item of items) {
-      const product = await this.productRepository.getById(item.productId);
-      if (!product) {
-        throw new Error(`Producto con ID ${item.productId} no encontrado`);
+    // Detectar si hay un paquete completo
+    const itemsWithPromotions = items
+      .filter(item => item.promotionId)
+      .map(item => ({
+        item,
+        promotion: null as any
+      }));
+
+    for (const itemWithPromo of itemsWithPromotions) {
+      const promotion = await this.promotionRepository.getById(itemWithPromo.item.promotionId!);
+      itemWithPromo.promotion = promotion;
+    }
+
+    // Verificar si hay un paquete completo
+    let packageApplied = false;
+    let packagePromotion: any = null;
+
+    for (const itemWithPromo of itemsWithPromotions) {
+      const promotion = itemWithPromo.promotion;
+      if (promotion?.discountType === 'PACKAGE_PRICE' && promotion.products) {
+        // Verificar si todos los productos del paquete están presentes con cantidades correctas
+        const allProductsPresent = promotion.products.every(promoProduct => {
+          const saleItem = items.find(
+            item => item.productId === promoProduct.productId
+          );
+          return saleItem && saleItem.quantity >= promoProduct.quantity;
+        });
+
+        if (allProductsPresent) {
+          packageApplied = true;
+          packagePromotion = promotion;
+          total = promotion.packagePrice || 0;
+          break;
+        }
+      }
+    }
+
+    // Si hay paquete completo, procesar diferente
+    if (packageApplied && packagePromotion) {
+      const packageProductIds = packagePromotion.products.map((p: any) => p.productId);
+
+      // Primero agregar los productos del paquete
+      for (const promoProduct of packagePromotion.products) {
+        const product = await this.productRepository.getById(promoProduct.productId);
+        if (!product) {
+          throw new Error(`Producto con ID ${promoProduct.productId} no encontrado`);
+        }
+
+        const canPrepare = await this.checkProductAvailabilityUseCase.canPrepare(
+          promoProduct.productId,
+          promoProduct.quantity
+        );
+
+        if (!canPrepare.canPrepare) {
+          throw new Error(`No se puede preparar ${product.name}: ${canPrepare.reason}`);
+        }
+
+        // Calcular precio proporcional del producto en el paquete
+        const totalRegularPrice = packagePromotion.products.reduce(
+          (sum: number, p: any) => sum + (p.unitPrice * p.quantity),
+          0
+        );
+        const productRegularTotal = promoProduct.unitPrice * promoProduct.quantity;
+        const proportion = productRegularTotal / totalRegularPrice;
+        const productPromoTotal = packagePromotion.packagePrice * proportion;
+        const itemPrice = productPromoTotal / promoProduct.quantity;
+
+        saleItems.push({
+          productId: product.id,
+          productName: product.name + ` (${packagePromotion.name})`,
+          quantity: promoProduct.quantity,
+          price: itemPrice,
+          subtotal: itemPrice * promoProduct.quantity,
+        });
       }
 
-      // Verificar disponibilidad basada en insumos
-      const canPrepare = await this.checkProductAvailabilityUseCase.canPrepare(
-        item.productId,
-        item.quantity
-      );
-      
-      if (!canPrepare.canPrepare) {
-        throw new Error(`No se puede preparar ${product.name}: ${canPrepare.reason}`);
-      }
+      // Luego agregar los productos adicionales fuera del paquete
+      for (const item of items) {
+        if (!packageProductIds.includes(item.productId)) {
+          const product = await this.productRepository.getById(item.productId);
+          if (!product) {
+            throw new Error(`Producto con ID ${item.productId} no encontrado`);
+          }
 
-      let itemPrice = product.price;
-      let promotionName = '';
-      
-      // Aplicar descuento de promoción si existe
-      if (item.promotionId) {
-        const promotion = await this.promotionRepository.getById(item.promotionId);
-        if (promotion && promotion.active && promotion.productId === product.id) {
-          const now = new Date();
-          const startDate = new Date(promotion.startDate);
-          const endDate = new Date(promotion.endDate);
+          const canPrepare = await this.checkProductAvailabilityUseCase.canPrepare(
+            item.productId,
+            item.quantity
+          );
+
+          if (!canPrepare.canPrepare) {
+            throw new Error(`No se puede preparar ${product.name}: ${canPrepare.reason}`);
+          }
+
+          const subtotal = product.price * item.quantity;
+          saleItems.push({
+            productId: product.id,
+            productName: product.name,
+            quantity: item.quantity,
+            price: product.price,
+            subtotal,
+          });
+
+          total += subtotal;
+        }
+      }
+    } else {
+      // Si no hay paquete completo, procesar normalmente
+      for (const item of items) {
+        const product = await this.productRepository.getById(item.productId);
+        if (!product) {
+          throw new Error(`Producto con ID ${item.productId} no encontrado`);
+        }
+
+        // Verificar disponibilidad basada en insumos
+        const canPrepare = await this.checkProductAvailabilityUseCase.canPrepare(
+          item.productId,
+          item.quantity
+        );
+        
+        if (!canPrepare.canPrepare) {
+          throw new Error(`No se puede preparar ${product.name}: ${canPrepare.reason}`);
+        }
+
+        let itemPrice = product.price;
+        let promotionName = '';
+        
+        // Aplicar descuento de promoción si existe
+        if (item.promotionId) {
+          const promotion = await this.promotionRepository.getById(item.promotionId);
+          // Verificar que la promoción sea válida para este producto
+          const isValidForProduct = promotion && promotion.active && (
+            promotion.productId === product.id || 
+            promotion.secondaryProductId === product.id ||
+            (promotion.products && promotion.products.some(p => p.productId === product.id))
+          );
           
-          if (startDate <= now && endDate >= now) {
-            promotionName = ` (${promotion.name})`;
+          if (isValidForProduct) {
+            const now = new Date();
+            const startDate = new Date(promotion.startDate);
+            const endDate = new Date(promotion.endDate);
             
-            if (promotion.discountType === 'PERCENTAGE') {
-              itemPrice = product.price * (1 - promotion.discountValue / 100);
-            } else if (promotion.discountType === 'FIXED_AMOUNT') {
-              itemPrice = Math.max(0, product.price - promotion.discountValue);
-            } else if (promotion.discountType === 'BUY_X_GET_Y' && promotion.buyQuantity && promotion.getQuantity) {
-              // Para 2x1: si compra 2, paga 1 (cobrar solo buyQuantity - getQuantity unidades por cada set)
-              const setsCount = Math.floor(item.quantity / promotion.buyQuantity);
-              const chargeableUnits = item.quantity - (setsCount * promotion.getQuantity);
-              const totalForPromo = product.price * chargeableUnits;
-              itemPrice = totalForPromo / item.quantity; // Precio promedio por unidad
+            if (startDate <= now && endDate >= now) {
+              promotionName = ` (${promotion.name})`;
+              
+              if (promotion.discountType === 'PACKAGE_PRICE' && promotion.packagePrice && promotion.products) {
+                // Para paquetes parciales: distribuir el precio proporcionalmente
+                const totalRegularPrice = promotion.products.reduce(
+                  (sum, p) => sum + (p.unitPrice * p.quantity), 
+                  0
+                );
+                const productInPromo = promotion.products.find(p => p.productId === product.id);
+                if (productInPromo) {
+                  // Calcular precio proporcional del producto en el paquete
+                  const productRegularTotal = productInPromo.unitPrice * productInPromo.quantity;
+                  const proportion = productRegularTotal / totalRegularPrice;
+                  const productPromoTotal = promotion.packagePrice * proportion;
+                  itemPrice = productPromoTotal / productInPromo.quantity;
+                }
+              } else if (promotion.discountType === 'PERCENTAGE') {
+                itemPrice = product.price * (1 - promotion.discountValue / 100);
+              } else if (promotion.discountType === 'FIXED_AMOUNT') {
+                itemPrice = Math.max(0, product.price - promotion.discountValue);
+              } else if (promotion.discountType === 'BUY_X_GET_Y' && promotion.buyQuantity && promotion.getQuantity) {
+                // Para 2x1: si compra 2, paga 1 (cobrar solo buyQuantity - getQuantity unidades por cada set)
+                const setsCount = Math.floor(item.quantity / promotion.buyQuantity);
+                const chargeableUnits = item.quantity - (setsCount * promotion.getQuantity);
+                const totalForPromo = product.price * chargeableUnits;
+                itemPrice = totalForPromo / item.quantity; // Precio promedio por unidad
+              }
             }
           }
         }
+
+        const subtotal = itemPrice * item.quantity;
+        saleItems.push({
+          productId: product.id,
+          productName: product.name + promotionName,
+          quantity: item.quantity,
+          price: itemPrice,
+          subtotal,
+        });
+
+        total += subtotal;
       }
-
-      const subtotal = itemPrice * item.quantity;
-      saleItems.push({
-        productId: product.id,
-        productName: product.name + promotionName,
-        quantity: item.quantity,
-        price: itemPrice,
-        subtotal,
-      });
-
-      total += subtotal;
     }
 
     // Crear la venta

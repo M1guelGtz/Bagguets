@@ -48,6 +48,15 @@ export const SaleForm: React.FC<SaleFormProps> = ({ products, promotions, worker
     new Date(p.endDate) >= now
   );
 
+  // Función para verificar si una promoción aplica a un producto
+  const getPromotionsForProduct = (productId: string) => {
+    return activePromotions.filter(p => 
+      p.productId === productId || 
+      p.secondaryProductId === productId ||
+      (p.products && p.products.some(prod => prod.productId === productId))
+    );
+  };
+
   const addItem = () => {
     setItems([...items, { productId: '', quantity: 1, promotionId: undefined }]);
   };
@@ -72,7 +81,7 @@ export const SaleForm: React.FC<SaleFormProps> = ({ products, promotions, worker
       const promotion = item.promotionId ? activePromotions.find(p => p.id === item.promotionId) : null;
       let itemTotal = product.price * item.quantity;
       
-      if (promotion) {
+      if (promotion && promotion.active) {
         if (promotion.discountType === 'PERCENTAGE') {
           itemTotal = itemTotal * (1 - promotion.discountValue / 100);
         } else if (promotion.discountType === 'FIXED_AMOUNT') {
@@ -81,6 +90,19 @@ export const SaleForm: React.FC<SaleFormProps> = ({ products, promotions, worker
           const setsCount = Math.floor(item.quantity / promotion.buyQuantity);
           const chargeableUnits = item.quantity - (setsCount * promotion.getQuantity);
           itemTotal = product.price * chargeableUnits;
+        } else if (promotion.discountType === 'PACKAGE_PRICE' && promotion.packagePrice && promotion.products) {
+          // Para paquetes: calcular precio proporcional del producto
+          const totalRegularPrice = promotion.products.reduce(
+            (sum, p) => sum + (p.unitPrice * p.quantity), 
+            0
+          );
+          const productInPromo = promotion.products.find(p => p.productId === product.id);
+          if (productInPromo) {
+            const productRegularTotal = productInPromo.unitPrice * productInPromo.quantity;
+            const proportion = productRegularTotal / totalRegularPrice;
+            const productPromoTotal = promotion.packagePrice * proportion;
+            itemTotal = (productPromoTotal / productInPromo.quantity) * item.quantity;
+          }
         }
       }
       
@@ -164,7 +186,7 @@ export const SaleForm: React.FC<SaleFormProps> = ({ products, promotions, worker
               </select>
             </div>
 
-            {item.productId && activePromotions.filter(p => p.productId === item.productId).length > 0 && (
+            {item.productId && getPromotionsForProduct(item.productId).length > 0 && (
               <div className="form-group">
                 <label>Promoción (opcional)</label>
                 <select
@@ -172,23 +194,23 @@ export const SaleForm: React.FC<SaleFormProps> = ({ products, promotions, worker
                   onChange={(e) => updateItem(index, 'promotionId', e.target.value || undefined)}
                 >
                   <option value="">Sin promoción</option>
-                  {activePromotions
-                    .filter(p => p.productId === item.productId)
-                    .map((promotion) => {
-                      let discountText = '';
-                      if (promotion.discountType === 'PERCENTAGE') {
-                        discountText = `${promotion.discountValue}% OFF`;
-                      } else if (promotion.discountType === 'FIXED_AMOUNT') {
-                        discountText = `$${promotion.discountValue} OFF`;
-                      } else if (promotion.discountType === 'BUY_X_GET_Y') {
-                        discountText = `${promotion.buyQuantity}x${(promotion.buyQuantity || 0) + (promotion.getQuantity || 0)}`;
-                      }
-                      return (
-                        <option key={promotion.id} value={promotion.id}>
-                          {promotion.name} - {discountText}
-                        </option>
-                      );
-                    })}
+                  {getPromotionsForProduct(item.productId).map((promotion) => {
+                    let discountText = '';
+                    if (promotion.discountType === 'PACKAGE_PRICE') {
+                      discountText = `Paquete: $${promotion.packagePrice?.toFixed(2)}`;
+                    } else if (promotion.discountType === 'PERCENTAGE') {
+                      discountText = `${promotion.discountValue}% OFF`;
+                    } else if (promotion.discountType === 'FIXED_AMOUNT') {
+                      discountText = `$${promotion.discountValue} OFF`;
+                    } else if (promotion.discountType === 'BUY_X_GET_Y') {
+                      discountText = `Compra ${promotion.buyQuantity} Lleva ${promotion.getQuantity}`;
+                    }
+                    return (
+                      <option key={promotion.id} value={promotion.id}>
+                        {promotion.name} - {discountText}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             )}
